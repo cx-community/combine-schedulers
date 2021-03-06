@@ -10,6 +10,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#if canImport(Darwin)
 import Darwin
 
 @available(macOS 10.12, iOS 10.0, tvOS 10.0, watchOS 3.0, *)
@@ -41,3 +42,43 @@ extension UnsafeMutablePointer where Pointee == os_unfair_lock_s {
     os_unfair_lock_unlock(self)
   }
 }
+#elseif canImport(Glibc)
+import Glibc
+
+typealias Lock = UnsafeMutablePointer<pthread_mutex_t>
+
+extension UnsafeMutablePointer where Pointee == pthread_mutex_t {
+  
+  internal init() {
+    let l = UnsafeMutablePointer<pthread_mutex_t>.allocate(capacity: 1)
+    pthread_mutex_init(l, nil).assertZero()
+    self = l
+  }
+  
+  internal func cleanupLock() {
+    pthread_mutex_destroy(self).assertZero()
+    deallocate()
+  }
+  
+  internal func lock() {
+    pthread_mutex_lock(self).assertZero()
+  }
+  
+  internal func tryLock() -> Bool {
+    let result = pthread_mutex_trylock(self)
+    return result == 0
+  }
+  
+  internal func unlock() {
+    pthread_mutex_unlock(self).assertZero()
+  }
+}
+
+extension Int32{
+  
+  @inline(__always)
+  fileprivate func assertZero() {
+    assert(self == 0)
+  }
+}
+#endif
