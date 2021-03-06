@@ -1,5 +1,5 @@
-#if canImport(Combine) && canImport(SwiftUI)
-  import Combine
+#if canImport(SwiftUI)
+  import CXShim
   import SwiftUI
 
   @available(iOS 13, macOS 10.15, tvOS 13, watchOS 6, *)
